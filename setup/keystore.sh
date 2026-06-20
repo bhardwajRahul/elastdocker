@@ -1,3 +1,4 @@
+#!/bin/bash
 # Exit on Error
 set -e
 
@@ -14,7 +15,6 @@ echo "Setting bootstrap.password..."
 ## Setting <name>
 #echo "Setting <name>..."
 #(echo "$<KEY_ENV_VALUE>" | elasticsearch-keystore add -x '<key>')
-
 
 # ----- Setting S3 Secrets
 

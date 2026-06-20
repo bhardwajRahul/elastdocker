@@ -17,12 +17,12 @@ filebeat.autodiscover:
       templates:
         - condition:
             and:
-             - not.contains:
-                docker.container.image: elasticsearch
-             - not.contains:
-                docker.container.image: logstash
-             - not.contains:
-                docker.container.image: kibana
+              - not.contains:
+                  docker.container.image: elasticsearch
+              - not.contains:
+                  docker.container.image: logstash
+              - not.contains:
+                  docker.container.image: kibana
           config:
             # ES 9+: Using filestream input (replaces deprecated container input)
             - type: filestream

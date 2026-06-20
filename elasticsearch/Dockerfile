@@ -4,6 +4,7 @@ ARG ELK_VERSION
 FROM docker.elastic.co/elasticsearch/elasticsearch:${ELK_VERSION}
 
 # Add healthcheck
+WORKDIR /usr/share/elasticsearch
 COPY scripts/docker-healthcheck .
 HEALTHCHECK CMD sh ./docker-healthcheck
 

@@ -64,7 +64,7 @@ down:			## Down ELK and all its extra components.
 
 stop:			## Stop ELK and all its extra components.
 	$(DOCKER_COMPOSE_COMMAND) ${COMPOSE_ALL_FILES} stop ${ELK_ALL_SERVICES}
-	
+
 restart:		## Restart ELK and all its extra components.
 	$(DOCKER_COMPOSE_COMMAND) ${COMPOSE_ALL_FILES} restart ${ELK_ALL_SERVICES}
 
