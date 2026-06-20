@@ -7,6 +7,9 @@ min_version = "2026.6.4"
 # ── 🛠️ tools ──────────────────────────────────────────────────────────────────────────────────────
 [tools]
 
+# uv installs the Python-based linters (yamllint) via uvx — see pipx.uvx below
+uv = "0.11"
+
 # linters & formatters (managed by mise, run via hk — see hk.pkl)
 actionlint = "1"    # GitHub Actions linter
 betterleaks = "1"   # secret scanner (gitleaks-compatible)
@@ -98,6 +101,7 @@ postinstall = "hk install --mise" # install git hooks after every `mise install`
 lockfile = true                     # write/commit mise.lock for reproducible installs
 minimum_release_age = "7d"          # ignore releases <7d old (supply-chain cooldown)
 disable_backends = ["asdf", "vfox"] # resolve only via verified backends
+pipx.uvx = true                     # install Python tools with uv (CI pip is too old for the cooldown's date filter)
 
 # Use a gh/git token for tool installs to avoid GitHub API rate limits.
 github.gh_cli_tokens = true
