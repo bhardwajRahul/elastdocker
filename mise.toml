@@ -1,0 +1,104 @@
+# Tool, task, env, and git-hook config for this repo. Source of truth for local dev + CI.
+# Setup:  mise trust && mise run setup   (see README.md / AGENTS.md)
+
+# Floor clients past the config-trust bypass fix (CVE-2026-35533); bump when relying on newer features.
+min_version = "2026.6.4"
+
+# ── 🛠️ tools ──────────────────────────────────────────────────────────────────────────────────────
+[tools]
+
+# linters & formatters (managed by mise, run via hk — see hk.pkl)
+actionlint = "1"    # GitHub Actions linter
+betterleaks = "1"   # secret scanner (gitleaks-compatible)
+hadolint = "2"      # Dockerfile linter
+pinact = "4"        # pin GitHub Actions to commit SHAs
+rumdl = "0.2"       # Markdown lint + format
+shellcheck = "0.11"
+shfmt = "3"         # shell formatter
+typos = "1"         # source spell-checker
+yamllint = "1"
+zizmor = "1"        # GitHub Actions security linter
+
+# pre-commit
+hk = "1.47.0"
+
+# ── 🌳 environment ────────────────────────────────────────────────────────────────────────────────
+[env]
+# Load the same vars the Makefile `include`s, so `mise run`/`docker compose` see them too.
+_.file = ".env"
+
+# ── 📏 vars ───────────────────────────────────────────────────────────────────────────────────────
+[vars]
+setup_version = "1" # bump to nudge contributors (via the enter hook) to re-run `mise run setup`
+
+# ── ▶️ tasks ──────────────────────────────────────────────────────────────────────────────────────
+[tasks.check]
+description = "Run all linters, formatters & validators (same as pre-commit and CI)"
+alias = ["lint"]
+usage = '''
+    flag "--fix"              help="apply fixes instead of only reporting"
+    flag "--all"              help="run on all files (default: staged only)"
+    flag "--pr"               help="only files changed vs the default branch (conflicts with --all)"
+    flag "--fail-fast"        help="stop at the first failing step (default: run all, report every failure)"
+    flag "--step <step>"      var=#true help="run only these step(s)"
+    flag "--skip-step <step>" var=#true help="skip these step(s)"
+    complete "step" run="hk check --plan --all --json --no-progress 2>/dev/null | jq -r '.steps[].name'"
+'''
+run = '''
+ff=${usage_fail_fast:+--fail-fast}; ff=${ff:---no-fail-fast}   # default to running every step
+hk check $ff ${usage_fix:+--fix} ${usage_all:+--all} ${usage_pr:+--pr} \
+  ${usage_step:+$(printf -- '--step %s ' $usage_step)} \
+  ${usage_skip_step:+$(printf -- '--skip-step %s ' $usage_skip_step)}
+'''
+
+[tasks.test]
+description = "Run tests (stack smoke test runs in CI; no local unit tests yet)"
+depends = ["lint"]
+run = 'echo "No local unit tests. The ELK stack smoke test runs in CI (.github/workflows/build.yml)."'
+
+[tasks.setup] # one-time, idempotent bootstrap; re-run when `enter` warns it's stale
+description = "Install pinned tools and git hooks"
+depends_post = ["setup:stamp"]
+run = "mise install"                               # installs tools; hk hooks self-install via the postinstall hook
+
+[tasks."setup:stamp"] # record the setup version in .mise/setup
+hide = true
+quiet = true
+run = 'printf %s "{{vars.setup_version}}" > .mise/setup && echo "✅ Setup v{{vars.setup_version}} stamped"'
+
+[tasks."setup:check"] # fast probe (runs on `enter`); warns if setup is stale, never fails
+hide = true
+quiet = true
+run = '[ "$(cat .mise/setup 2>/dev/null)" = "{{vars.setup_version}}" ] || echo "⚠️  Your setup is stale, run: mise run setup" >&2'
+
+# Stack lifecycle — thin wrappers over the Makefile (the canonical definitions live there).
+[tasks.up]
+description = "Start the ELK stack (delegates to `make up`)"
+run = "make up"
+
+[tasks.down]
+description = "Stop and remove the stack (delegates to `make down`)"
+run = "make down"
+
+[tasks.logs]
+description = "Tail stack logs (delegates to `make logs`)"
+run = "make logs"
+
+[tasks."stack:setup"]
+description = "Generate Elasticsearch certs + keystore (delegates to `make setup`)"
+run = "make setup"
+
+# ── 🪝 hooks ──────────────────────────────────────────────────────────────────────────────────────
+[hooks]
+enter = "mise run setup:check"    # nudge contributors when their setup is stale
+postinstall = "hk install --mise" # install git hooks after every `mise install` (idempotent)
+
+# ── ⚙️ settings ───────────────────────────────────────────────────────────────────────────────────
+[settings]
+lockfile = true                     # write/commit mise.lock for reproducible installs
+minimum_release_age = "7d"          # ignore releases <7d old (supply-chain cooldown)
+disable_backends = ["asdf", "vfox"] # resolve only via verified backends
+
+# Use a gh/git token for tool installs to avoid GitHub API rate limits.
+github.gh_cli_tokens = true
+github.use_git_credentials = true
