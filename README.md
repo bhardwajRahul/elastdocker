@@ -29,17 +29,18 @@
 </p>
 
 # Introduction
+
 Elastic Stack (**ELK**) Docker Composition, preconfigured with **Security**, **Monitoring**, and **Tools**; Up with a Single Command.
 
 Suitable for Demoing, MVPs and small production deployments.
 
-Stack Version: [9.2.3](https://www.elastic.co/guide/en/elasticsearch/reference/9.2/release-notes-9.2.3.html) 🎉  - Based on [Official Elastic Docker Images](https://www.docker.elastic.co/)
+Stack Version: [9.2.3](https://www.elastic.co/guide/en/elasticsearch/reference/9.2/release-notes-9.2.3.html) 🎉 - Based on [Official Elastic Docker Images](https://www.docker.elastic.co/)
 > You can change Elastic Stack version by setting `ELK_VERSION` in `.env` file and rebuild your images. Any version >= 9.0.0 is compatible with this template.
 >
 > ⚠️ **Upgrading from 8.x?** See the [Upgrade Notes](#upgrade-notes-from-8x-to-9x) section below for breaking changes and migration steps.
 ---
 
-### Main Features 📜
+## Main Features 📜
 
 - Configured as a Production Single Node Cluster. (With a multi-node cluster option for experimenting).
 - Security Enabled By Default.
@@ -58,7 +59,8 @@ Stack Version: [9.2.3](https://www.elastic.co/guide/en/elasticsearch/reference/9
 - Prometheus Exporters for Stack Metrics.
 - Embedded Container Healthchecks for Stack Images.
 
-#### More points
+### More points
+
 And comparing Elastdocker and the popular [deviantony/docker-elk](https://github.com/deviantony/docker-elk)
 
 <details><summary>Expand...</summary>
@@ -92,7 +94,6 @@ Elastdocker differs from `deviantony/docker-elk` in the following points.
 </p>
 </details>
 
-
 ### Automatic Docker Container Log Collection
 
 Collect logs from **all Docker containers** on your host with a single command:
@@ -103,103 +104,120 @@ make collect-docker-logs
 
 Filebeat automatically discovers containers, parses logs, and ships them to Elasticsearch. View and analyze everything in Kibana with zero configuration.
 
+---
 
------
-
-# Requirements
+## Requirements
 
 - [Docker 20.05 or higher](https://docs.docker.com/install/) with Docker Compose v2
 - 4GB RAM (For Windows and MacOS make sure Docker's VM has more than 4GB+ memory.)
 
-# Setup
+## Setup
 
 1. Clone the Repository
+
      ```bash
      git clone https://github.com/sherifabdlnaby/elastdocker.git
      ```
+
 2. Initialize Elasticsearch Keystore and TLS Self-Signed Certificates
+
     ```bash
-    $ make setup
+    make setup
     ```
-    > **For Linux's docker hosts only**. By default virtual memory [is not enough](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html) so run the next command as root `sysctl -w vm.max_map_count=262144`
+
+   > **For Linux's docker hosts only**. By default virtual memory [is not enough](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html) so run the next command as root `sysctl -w vm.max_map_count=262144`
 3. Start Elastic Stack
+
     ```bash
-    $ make elk           <OR>         $ docker compose up -d
+    make elk           <OR>         $ docker compose up -d
     ```
+
 4. Visit Kibana at [https://localhost:5601](https://localhost:5601) or `https://<your_public_ip>:5601`
 
-    Default Username: `elastic`, Password: `changeme`
+   Default Username: `elastic`, Password: `changeme`
 
     > - Notice that Kibana is configured to use HTTPS, so you'll need to write `https://` before `localhost:5601` in the browser.
     > - Modify `.env` file for your needs, most importantly `ELASTIC_PASSWORD` that setup your superuser `elastic`'s password, `ELASTICSEARCH_HEAP` & `LOGSTASH_HEAP` for Elasticsearch & Logstash Heap Size.
-    
-> Whatever your Host (e.g AWS EC2, Azure, DigitalOcean, or on-premise server), once you expose your host to the network, ELK component will be accessible on their respective ports. Since the enabled TLS uses a self-signed certificate, it is recommended to SSL-Terminate public traffic using your signed certificates. 
 
+> Whatever your Host (e.g AWS EC2, Azure, DigitalOcean, or on-premise server), once you expose your host to the network, ELK component will be accessible on their respective ports. Since the enabled TLS uses a self-signed certificate, it is recommended to SSL-Terminate public traffic using your signed certificates.
+>
 > 🏃🏻‍♂️ To start ingesting logs, you can start by running `make collect-docker-logs` which will collect your host's container logs.
 
-## Additional Commands
+### Additional Commands
 
 <details><summary>Expand</summary>
 <p>
 
 #### To Start Monitoring and Prometheus Exporters
+
 ```shell
-$ make monitoring
-```
-#### To Ship Docker Container Logs to ELK 
-```shell
-$ make collect-docker-logs
-```
-#### To Start **Elastic Stack, Tools and Monitoring**
-```
-$ make all
-```
-#### To Start 2 Extra Elasticsearch nodes (recommended for experimenting only)
-```shell
-$ make nodes
-```
-#### To Rebuild Images
-```shell
-$ make build
-```
-#### Bring down the stack.
-```shell
-$ make down
+make monitoring
 ```
 
-#### Reset everything, Remove all containers, and delete **DATA**!
+##### To Ship Docker Container Logs to ELK
+
 ```shell
-$ make prune
+make collect-docker-logs
+```
+
+##### To Start **Elastic Stack, Tools and Monitoring**
+
+```text
+$ make all
+```
+
+##### To Start 2 Extra Elasticsearch nodes (recommended for experimenting only)
+
+```shell
+make nodes
+```
+
+##### To Rebuild Images
+
+```shell
+make build
+```
+
+##### Bring down the stack
+
+```shell
+make down
+```
+
+##### Reset everything, Remove all containers, and delete **DATA**
+
+```shell
+make prune
 ```
 
 </p>
 </details>
 
-# Configuration
+## Configuration
 
-* Some Configuration are parameterized in the `.env` file.
-  * `ELASTIC_PASSWORD`, user `elastic`'s password (default: `changeme` _pls_).
-  * `ELK_VERSION` Elastic Stack Version (default: `9.2.3`)
-  * `ELASTICSEARCH_HEAP`, how much Elasticsearch allocate from memory (default: 1GB -good for development only-)
-  * `LOGSTASH_HEAP`, how much Logstash allocate from memory.
-  * Other configurations which their such as cluster name, and node name, etc.
-* Elasticsearch Configuration in `elasticsearch.yml` at `./elasticsearch/config`.
-* Logstash Configuration in `logstash.yml` at `./logstash/config/logstash.yml`.
-* Logstash Pipeline in `main.conf` at `./logstash/pipeline/main.conf`.
-* Kibana Configuration in `kibana.yml` at `./kibana/config`.
-* Metricbeat Configuration in `metricbeat.yml` at `./metricbeat/config` (for Stack Monitoring in ES 9+).
+- Some Configuration are parameterized in the `.env` file.
+  - `ELASTIC_PASSWORD`, user `elastic`'s password (default: `changeme` _pls_).
+  - `ELK_VERSION` Elastic Stack Version (default: `9.2.3`)
+  - `ELASTICSEARCH_HEAP`, how much Elasticsearch allocate from memory (default: 1GB -good for development only-)
+  - `LOGSTASH_HEAP`, how much Logstash allocate from memory.
+  - Other configurations which their such as cluster name, and node name, etc.
+- Elasticsearch Configuration in `elasticsearch.yml` at `./elasticsearch/config`.
+- Logstash Configuration in `logstash.yml` at `./logstash/config/logstash.yml`.
+- Logstash Pipeline in `main.conf` at `./logstash/pipeline/main.conf`.
+- Kibana Configuration in `kibana.yml` at `./kibana/config`.
+- Metricbeat Configuration in `metricbeat.yml` at `./metricbeat/config` (for Stack Monitoring in ES 9+).
 
 ### Setting Up Keystore
 
 You can extend the Keystore generation script by adding keys to `./setup/keystore.sh` script. (e.g Add S3 Snapshot Repository Credentials)
 
 To Re-generate Keystore:
-```
+
+```text
 make keystore
 ```
 
-### Notes
-
+#### Notes
 
 - ⚠️ Elasticsearch HTTP layer is using SSL, thus mean you need to configure your elasticsearch clients with the `CA` in `secrets/certs/ca/ca.crt`, or configure client to ignore SSL Certificate Verification (e.g `--insecure` in `curl`).
 
@@ -214,23 +232,25 @@ make keystore
 - Make sure to run `make setup` if you changed `ELASTIC_PASSWORD` and to restart the stack afterwards.
 
 - For Linux Users it's recommended to set the following configuration (run as `root`)
-    ```
+
+    ```text
     sysctl -w vm.max_map_count=262144
     ```
-    By default, Virtual Memory [is not enough](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html).
 
----------------------------
+  By default, Virtual Memory [is not enough](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html).
+
+---
 
 ![Intro](https://user-images.githubusercontent.com/16992394/156664447-c24c49f4-4282-4d6a-81a7-10743cfa384e.png)
 ![Alerting](https://user-images.githubusercontent.com/16992394/156664848-d14f5e58-8f80-497d-a841-914c05a4b69c.png)
 ![Maps](https://user-images.githubusercontent.com/16992394/156664562-d38e11ee-b033-4b91-80bd-3a866ad65f56.png)
 ![ML](https://user-images.githubusercontent.com/16992394/156664695-5c1ed4a7-82f3-47a6-ab5c-b0ce41cc0fbe.png)
 
-# Working with Elastic APM
+## Working with Elastic APM
 
 After completing the setup step, you will notice a container named apm-server which gives you deeper visibility into your applications and can help you to identify and resolve root cause issues with correlated traces, logs, and metrics.
 
-## Authenticating with Elastic APM
+### Authenticating with Elastic APM
 
 In order to authenticate with Elastic APM, you will need the following:
 
@@ -239,21 +259,23 @@ In order to authenticate with Elastic APM, you will need the following:
 - Install elastic apm client in your application e.g. for NodeJS based applications you need to install [elastic-apm-node](https://www.elastic.co/guide/en/apm/agent/nodejs/master/typescript.html)
 - Import the package in your application and call the start function, In case of NodeJS based application you can do the following:
 
-```
+```text
 const apm = require('elastic-apm-node').start({
   serviceName: 'foobar',
   secretToken: process.env.ELASTIC_APM_SECRET_TOKEN,
-  
+
   // https is enabled by default as per elastdocker configuration
   serverUrl: 'https://localhost:8200',
 })
 ```
+
 > Make sure that the agent is started before you require any other modules in your Node.js application - i.e. before express, http, etc. as mentioned in [Elastic APM Agent - NodeJS initialization](https://www.elastic.co/guide/en/apm/agent/nodejs/master/express.html#express-initialization)
 
 For more details or other languages you can check the following:
+
 - [APM Agents in different languages](https://www.elastic.co/guide/en/apm/agent/index.html)
 
-# Monitoring The Cluster
+## Monitoring The Cluster
 
 ### Via Stack Monitoring (Metricbeat)
 
@@ -265,12 +287,14 @@ Head to **Stack Monitoring** tab in Kibana to see cluster metrics for all stack 
 ![Moniroting](https://user-images.githubusercontent.com/16992394/156664647-78cfe2af-489d-4c35-8963-9b0a46904cf7.png)
 
 **Architecture Change in ES 9:**
+
 - **ES 8.x and earlier**: Used internal `xpack.monitoring` for self-monitoring
 - **ES 9.x**: Uses external Metricbeat collection (more scalable and reliable)
 
 > In Production, cluster metrics should be shipped to another dedicated monitoring cluster.
 
-### Via Prometheus Exporters
+#### Via Prometheus Exporters
+
 If you started Prometheus Exporters using `make monitoring` command. Prometheus Exporters will expose metrics at the following ports.
 
 | **Prometheus Exporter**      | **Port**     | **Recommended Grafana Dashboard**                                         |
@@ -284,69 +308,78 @@ If you started Prometheus Exporters using `make monitoring` command. Prometheus 
 
 ---
 
-# Upgrade Notes from 8.x to 9.x
+## Upgrade Notes from 8.x to 9.x
 
 <details><summary>Expand to see breaking changes and migration details...</summary>
 <p>
 
 Elasticsearch 9 introduced several breaking changes. This section documents the changes made to ElastDocker for ES 9 compatibility.
 
-## Breaking Changes Fixed
+### Breaking Changes Fixed
 
-### 1. **Logstash Configuration Changes**
+#### 1. **Logstash Configuration Changes**
 
 **File: `logstash/config/logstash.yml`**
+
 - `http.host` → `api.http.host`
 
 **File: `logstash/pipeline/main.conf`**
+
 - `ssl` → `ssl_enabled`
 - `ssl_certificate_verification` → `ssl_verification_mode`
 - `cacert` → `ssl_certificate_authorities`
 
-### 2. **Monitoring Architecture Change**
+#### 2. **Monitoring Architecture Change**
 
 **Before (ES 8.x):**
+
 - Used internal `xpack.monitoring.collection.enabled` setting
 - Components self-reported metrics
 
 **After (ES 9.x):**
+
 - Uses external Metricbeat for metric collection
 - More scalable and follows Elastic's recommended approach
 - New component: `metricbeat` service in `docker-compose.monitor.yml`
 
 **Files Modified:**
+
 - `elasticsearch/config/elasticsearch.yml` - Removed `xpack.monitoring.collection.enabled`
 - `logstash/config/logstash.yml` - Removed `xpack.monitoring` settings
 - `apm-server/config/apm-server.yml` - Removed monitoring section
 - `metricbeat/config/metricbeat.yml` - **NEW FILE** for Stack Monitoring
 
-### 3. **Filebeat Migration to Filestream Input**
+#### 3. **Filebeat Migration to Filestream Input**
 
 The `container` input type is deprecated in Filebeat 9. Migrated to the modern `filestream` input with container parser - the ES 9+ recommended approach.
 
 **Files Modified:**
+
 - `filebeat/filebeat.docker.logs.yml` - Now uses `type: filestream` with container parser
 - `filebeat/filebeat.monitoring.yml` - All module inputs migrated to filestream
 
 **Key Changes:**
+
 - `type: container` → `type: filestream` with unique IDs
 - Added `parsers.container` configuration for Docker log parsing
 - Added `prospector.scanner.symlinks: true` for Docker log paths
 - No deprecation warnings - fully ES 9 compliant
 
-### 4. **Certificate Generation Script**
+#### 4. **Certificate Generation Script**
 
 **File: `setup/setup-certs.sh`**
+
 - Updated password generation to work without `openssl` command (not available in ES 9 containers)
 - Now uses `/dev/urandom` for random password generation
 
-### 5. **Elasticsearch Exporter Flags**
+#### 5. **Elasticsearch Exporter Flags**
 
 **File: `docker-compose.monitor.yml`**
+
 - Updated exporter flags for compatibility with exporter v1.10.0+
 - `--collector.indices` → `--es.indices`
 
-## Known Deprecation Warnings
+### Known Deprecation Warnings
 
 The following deprecation warnings are expected and originate from upstream Elastic components. They will be resolved in future component releases:
 
@@ -366,16 +399,18 @@ The following deprecation warnings are expected and originate from upstream Elas
 
 These warnings don't affect functionality and are logged to the deprecation data stream for visibility.
 
-## Upgrade Path
+### Upgrade Path
 
 **Important:** You must upgrade to Elasticsearch 8.19.x before upgrading to 9.x.
 
 **Recommended Path:**
-```
+
+```text
 8.17.0 → 8.19.x (run Upgrade Assistant) → 9.x
 ```
 
 For a clean installation on ES 9, simply:
+
 1. Set `ELK_VERSION=9.2.3` in `.env`
 2. Run `make setup`
 3. Run `make elk` (or `make all` for full stack with monitoring)
@@ -385,10 +420,45 @@ For a clean installation on ES 9, simply:
 
 ---
 
-# License
+## Development
+
+Running the stack only needs Docker (see [Setup](#setup)). Contributing to the repo additionally uses [**mise**](https://mise.jdx.dev) to pin the linters/formatters, expose tasks, and wire git hooks, so everyone lints with the same tool versions as CI.
+
+<details>
+<summary><b>Install mise (first time on this machine)</b></summary>
+
+```bash
+curl https://mise.run | sh          # or: brew install mise
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc   # bash: mise activate bash
+mise doctor                         # confirm the install is healthy
+```
+
+See the [installation docs](https://mise.jdx.dev/installing-mise.html) for other shells and Windows.
+
+</details>
+
+Set up the toolchain once:
+
+```bash
+mise trust      # allow this repo's mise config to load
+mise run setup  # install the pinned tools; git hooks self-install
+```
+
+Everyday commands:
+
+| Command                            | What it does                                                       |
+|------------------------------------|-------------------------------------------------------------------|
+| `mise run check` (alias `lint`)    | Run every linter/formatter/validator. Add `--fix` to auto-fix.    |
+| `mise tasks`                       | List all tasks (`up`, `down`, `logs`, `stack:setup`, …).          |
+| `mise run <task> --help`           | Show a task's flags.                                              |
+
+On commit, [hk](https://hk.jdx.dev) runs the same `check` on your staged files, so lint problems surface before CI. Need to bypass it for a WIP commit? `git commit --no-verify`. Tools, tasks, and hooks all live in `mise.toml` and `hk.pkl`.
+
+## License
+
 [MIT License](https://raw.githubusercontent.com/sherifabdlnaby/elastdocker/master/LICENSE)
-Copyright (c) 2022-2026 Sherif Abdel-Naby
+Copyright (c) 2022-2026 Sheriff Abdel-Naby
 
-# Contribution
+## Contribution
 
-PR(s) are Open and Welcomed.
+PR(s) are Open and Welcomed. Run `mise run check` before opening one (see [Development](#development)).
