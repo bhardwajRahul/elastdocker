@@ -4,7 +4,7 @@ Guide for AI agents working in this repo. Humans: see [README.md](README.md).
 
 ## What this is
 
-A Docker Compose distribution of the Elastic Stack (Elasticsearch, Logstash, Kibana, APM, Beats). The runtime is **Docker Compose v2**; the stack is driven by the `Makefile` (`make up`, `make setup`, `make down`, …). There is no application source to build, the repo is compose files, service configs (YAML), Dockerfiles, and shell setup scripts.
+A Docker Compose distribution of the Elastic Stack (Elasticsearch, Logstash, Kibana, APM, Beats). The runtime is **Docker Compose v2**; the stack is driven by **mise tasks** (`mise run up`, `mise run stack:setup`, `mise run down`, … see `mise tasks`). The `Makefile` still has the equivalent raw docker commands but is **deprecated**. There is no application source to build, the repo is compose files, service configs (YAML), Dockerfiles, and shell setup scripts.
 
 ## Toolchain (mise)
 

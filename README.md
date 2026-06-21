@@ -46,7 +46,7 @@ Stack Version: [9.2.3](https://www.elastic.co/guide/en/elasticsearch/reference/9
 - Security Enabled By Default.
 - Configured to Enable:
   - Logging & Metrics Ingestion
-    - Option to collect logs of all Docker Containers running on the host. via `make collect-docker-logs`.
+    - Option to collect logs of all Docker Containers running on the host. via `mise run collect-docker-logs`.
   - APM
   - Alerting
   - Machine Learning
@@ -99,7 +99,7 @@ Elastdocker differs from `deviantony/docker-elk` in the following points.
 Collect logs from **all Docker containers** on your host with a single command:
 
 ```bash
-make collect-docker-logs
+mise run collect-docker-logs
 ```
 
 Filebeat automatically discovers containers, parses logs, and ships them to Elasticsearch. View and analyze everything in Kibana with zero configuration.
@@ -122,14 +122,14 @@ Filebeat automatically discovers containers, parses logs, and ships them to Elas
 2. Initialize Elasticsearch Keystore and TLS Self-Signed Certificates
 
     ```bash
-    make setup
+    mise run stack:setup
     ```
 
    > **For Linux's docker hosts only**. By default virtual memory [is not enough](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html) so run the next command as root `sysctl -w vm.max_map_count=262144`
 3. Start Elastic Stack
 
     ```bash
-    make elk           <OR>         $ docker compose up -d
+    mise run up        # <OR>  docker compose up -d
     ```
 
 4. Visit Kibana at [https://localhost:5601](https://localhost:5601) or `https://<your_public_ip>:5601`
@@ -141,7 +141,7 @@ Filebeat automatically discovers containers, parses logs, and ships them to Elas
 
 > Whatever your Host (e.g AWS EC2, Azure, DigitalOcean, or on-premise server), once you expose your host to the network, ELK component will be accessible on their respective ports. Since the enabled TLS uses a self-signed certificate, it is recommended to SSL-Terminate public traffic using your signed certificates.
 >
-> 🏃🏻‍♂️ To start ingesting logs, you can start by running `make collect-docker-logs` which will collect your host's container logs.
+> 🏃🏻‍♂️ To start ingesting logs, you can start by running `mise run collect-docker-logs` which will collect your host's container logs.
 
 ### Additional Commands
 
@@ -151,43 +151,43 @@ Filebeat automatically discovers containers, parses logs, and ships them to Elas
 #### To Start Monitoring and Prometheus Exporters
 
 ```shell
-make monitoring
+mise run monitoring
 ```
 
 ##### To Ship Docker Container Logs to ELK
 
 ```shell
-make collect-docker-logs
+mise run collect-docker-logs
 ```
 
 ##### To Start **Elastic Stack, Tools and Monitoring**
 
 ```text
-$ make all
+mise run all
 ```
 
 ##### To Start 2 Extra Elasticsearch nodes (recommended for experimenting only)
 
 ```shell
-make nodes
+mise run nodes
 ```
 
 ##### To Rebuild Images
 
 ```shell
-make build
+mise run build
 ```
 
 ##### Bring down the stack
 
 ```shell
-make down
+mise run down
 ```
 
 ##### Reset everything, Remove all containers, and delete **DATA**
 
 ```shell
-make prune
+mise run prune
 ```
 
 </p>
@@ -214,7 +214,7 @@ You can extend the Keystore generation script by adding keys to `./setup/keystor
 To Re-generate Keystore:
 
 ```text
-make keystore
+mise run keystore
 ```
 
 #### Notes
@@ -223,13 +223,13 @@ make keystore
 
 - Adding Two Extra Nodes to the cluster will make the cluster depending on them and won't start without them again.
 
-- Makefile is a wrapper around `Docker Compose` commands, use `make help` to know every command.
+- The stack is driven by mise tasks; run `mise tasks` to list them. The `Makefile` keeps the same commands but is deprecated.
 
 - Elasticsearch will save its data to a volume named `elasticsearch-data`
 
 - Elasticsearch Keystore (that contains passwords and credentials) and SSL Certificate are generated in the `./secrets` directory by the setup command.
 
-- Make sure to run `make setup` if you changed `ELASTIC_PASSWORD` and to restart the stack afterwards.
+- Make sure to run `mise run stack:setup` if you changed `ELASTIC_PASSWORD` and to restart the stack afterwards.
 
 - For Linux Users it's recommended to set the following configuration (run as `root`)
 
@@ -279,7 +279,7 @@ For more details or other languages you can check the following:
 
 ### Via Stack Monitoring (Metricbeat)
 
-**Elasticsearch 9+** uses Metricbeat for Stack Monitoring (the recommended approach). When you start monitoring with `make monitoring`, Metricbeat will collect metrics from all stack components and send them to Elasticsearch.
+**Elasticsearch 9+** uses Metricbeat for Stack Monitoring (the recommended approach). When you start monitoring with `mise run monitoring`, Metricbeat will collect metrics from all stack components and send them to Elasticsearch.
 
 Head to **Stack Monitoring** tab in Kibana to see cluster metrics for all stack components.
 
@@ -295,7 +295,7 @@ Head to **Stack Monitoring** tab in Kibana to see cluster metrics for all stack 
 
 #### Via Prometheus Exporters
 
-If you started Prometheus Exporters using `make monitoring` command. Prometheus Exporters will expose metrics at the following ports.
+If you started Prometheus Exporters using `mise run monitoring` command. Prometheus Exporters will expose metrics at the following ports.
 
 | **Prometheus Exporter**      | **Port**     | **Recommended Grafana Dashboard**                                         |
 |--------------------------    |----------    |------------------------------------------------  |
@@ -412,8 +412,8 @@ These warnings don't affect functionality and are logged to the deprecation data
 For a clean installation on ES 9, simply:
 
 1. Set `ELK_VERSION=9.2.3` in `.env`
-2. Run `make setup`
-3. Run `make elk` (or `make all` for full stack with monitoring)
+2. Run `mise run stack:setup`
+3. Run `mise run up` (or `mise run all` for full stack with monitoring)
 
 </p>
 </details>

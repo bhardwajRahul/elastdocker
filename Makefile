@@ -1,5 +1,12 @@
 .DEFAULT_GOAL:=help
 
+# ──────────────────────────────────────────────────────────────────────────────
+# ⚠️  DEPRECATED. These targets are kept for backward compatibility only.
+# The stack is now driven by mise: run `mise tasks` to list tasks, then
+# `mise run <task>` (e.g. `mise run up`, `mise run logs`, `mise run down`).
+# Task definitions live in mise.toml. This Makefile is no longer maintained.
+# ──────────────────────────────────────────────────────────────────────────────
+
 include .env
 
 COMPOSE_ALL_FILES := -f docker-compose.yml -f docker-compose.monitor.yml -f docker-compose.nodes.yml -f docker-compose.logs.yml
@@ -83,5 +90,6 @@ prune:			## Remove ELK Containers and Delete ELK-related Volume Data (the elasti
 	@echo "Removed all volumes for project: ${COMPOSE_PROJECT_NAME}"
 
 help:       	## Show this help.
+	@echo "⚠️  This Makefile is DEPRECATED. Prefer 'mise tasks' / 'mise run <task>'."
 	@echo "Make Application Docker Images and Containers using Docker Compose (v2) files."
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m (default: help)\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
