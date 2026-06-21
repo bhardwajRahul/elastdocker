@@ -1,0 +1,221 @@
+# Tool, task, env, and git-hook config for this repo. Source of truth for local dev + CI.
+# Setup:  mise trust && mise run setup   (see README.md / AGENTS.md)
+
+# Floor clients past the config-trust bypass fix (CVE-2026-35533); bump when relying on newer features.
+min_version = "2026.6.4"
+
+# ── 🛠️ tools ──────────────────────────────────────────────────────────────────────────────────────
+[tools]
+
+# uv installs the Python-based linters (yamllint) via uvx — see pipx.uvx below
+uv = "0.11"
+
+# linters & formatters (managed by mise, run via hk — see hk.pkl)
+actionlint = "1"    # GitHub Actions linter
+betterleaks = "1"   # secret scanner (gitleaks-compatible)
+hadolint = "2"      # Dockerfile linter
+pinact = "4"        # pin GitHub Actions to commit SHAs
+rumdl = "0.2"       # Markdown lint + format
+shellcheck = "0.11"
+shfmt = "3"         # shell formatter
+typos = "1"         # source spell-checker
+yamllint = "1"
+zizmor = "1"        # GitHub Actions security linter
+
+# pre-commit
+hk = "1.47.0"
+
+# ── 🌳 environment ────────────────────────────────────────────────────────────────────────────────
+[env]
+# Load the same vars the Makefile `include`s, so `mise run`/`docker compose` see them too.
+_.file = ".env"
+
+# ── 📏 vars ───────────────────────────────────────────────────────────────────────────────────────
+[vars]
+setup_version = "1" # bump to nudge contributors (via the enter hook) to re-run `mise run setup`
+
+# docker compose file sets (used by the stack tasks below)
+compose_all = "-f docker-compose.yml -f docker-compose.monitor.yml -f docker-compose.nodes.yml -f docker-compose.logs.yml"
+compose_monitoring = "-f docker-compose.yml -f docker-compose.monitor.yml"
+compose_logging = "-f docker-compose.yml -f docker-compose.logs.yml"
+compose_nodes = "-f docker-compose.yml -f docker-compose.nodes.yml"
+compose_setup = "-f docker-compose.setup.yml"
+
+# service groups
+elk_services = "elasticsearch logstash kibana apm-server"
+elk_log_collection = "filebeat"
+elk_monitoring = "elasticsearch-exporter logstash-exporter filebeat-cluster-logs metricbeat"
+elk_nodes = "elasticsearch-1 elasticsearch-2"
+elk_main_services = "elasticsearch logstash kibana apm-server elasticsearch-exporter logstash-exporter filebeat-cluster-logs metricbeat"
+elk_all_services = "elasticsearch logstash kibana apm-server elasticsearch-exporter logstash-exporter filebeat-cluster-logs metricbeat elasticsearch-1 elasticsearch-2 filebeat"
+
+# ── ▶️ tasks ──────────────────────────────────────────────────────────────────────────────────────
+[tasks.check]
+description = "Run all linters, formatters & validators (same as pre-commit and CI)"
+alias = ["lint"]
+usage = '''
+    flag "--fix"              help="apply fixes instead of only reporting"
+    flag "--all"              help="run on all files (default: staged only)"
+    flag "--pr"               help="only files changed vs the default branch (conflicts with --all)"
+    flag "--fail-fast"        help="stop at the first failing step (default: run all, report every failure)"
+    flag "--step <step>"      var=#true help="run only these step(s)"
+    flag "--skip-step <step>" var=#true help="skip these step(s)"
+    complete "step" run="hk check --plan --all --json --no-progress 2>/dev/null | jq -r '.steps[].name'"
+'''
+run = '''
+ff=${usage_fail_fast:+--fail-fast}; ff=${ff:---no-fail-fast}   # default to running every step
+hk check $ff ${usage_fix:+--fix} ${usage_all:+--all} ${usage_pr:+--pr} \
+  ${usage_step:+$(printf -- '--step %s ' $usage_step)} \
+  ${usage_skip_step:+$(printf -- '--skip-step %s ' $usage_skip_step)}
+'''
+
+[tasks.test]
+description = "Run tests (stack smoke test runs in CI; no local unit tests yet)"
+depends = ["lint"]
+run = 'echo "No local unit tests. The ELK stack smoke test runs in CI (.github/workflows/build.yml)."'
+
+[tasks.setup] # one-time, idempotent bootstrap; re-run when `enter` warns it's stale
+description = "Install pinned tools and git hooks"
+depends_post = ["setup:stamp"]
+run = "mise install"                               # installs tools; hk hooks self-install via the postinstall hook
+
+[tasks."setup:stamp"] # record the setup version in .mise/setup
+hide = true
+quiet = true
+run = 'printf %s "{{vars.setup_version}}" > .mise/setup && echo "✅ Setup v{{vars.setup_version}} stamped"'
+
+[tasks."setup:check"] # fast probe (runs on `enter`); warns if setup is stale, never fails
+hide = true
+quiet = true
+run = '[ "$(cat .mise/setup 2>/dev/null)" = "{{vars.setup_version}}" ] || echo "⚠️  Your setup is stale, run: mise run setup" >&2'
+
+# ── 🐳 ELK stack ──────────────────────────────────────────────────────────────────────────────────
+# Native docker-compose tasks (source of truth). The Makefile is a deprecated shim that forwards here.
+# Service args use dynamic completion: `mise run logs <TAB>` lists compose services.
+
+[tasks."stack:setup"]
+description = "Generate Elasticsearch SSL certs + keystore (run once before first start)"
+run = '''
+docker compose {{vars.compose_setup}} run --rm certs
+docker compose {{vars.compose_setup}} run --rm keystore
+'''
+
+[tasks.certs]
+description = "Generate Elasticsearch SSL certificates"
+run = "docker compose {{vars.compose_setup}} run --rm certs"
+
+[tasks.keystore]
+description = "Initialize the Elasticsearch keystore and credentials"
+run = "docker compose {{vars.compose_setup}} run --rm keystore"
+
+[tasks."upgrade-keystore"]
+description = "Upgrade the Elasticsearch keystore (stop the stack first)"
+run = '''
+if [ -n "$(docker compose ps -q)" ]; then
+  echo "Please stop all running containers before upgrading the keystore." >&2
+  exit 1
+fi
+docker compose {{vars.compose_setup}} run --rm upgrade-keystore
+'''
+
+[tasks.up]
+description = "Build & start the core ELK stack (elasticsearch, logstash, kibana, apm-server)"
+run = '''
+docker compose up -d --build
+echo "Visit Kibana: https://localhost:${KIBANA_PORT:-5601} (user: ${ELASTIC_USERNAME:-elastic}, password from .env)"
+'''
+
+[tasks.all]
+description = "Build & start ELK plus the monitoring exporters"
+run = "docker compose {{vars.compose_all}} up -d --build {{vars.elk_main_services}}"
+
+[tasks.monitoring]
+description = "Start the monitoring services (Prometheus exporters + Metricbeat)"
+run = "docker compose {{vars.compose_monitoring}} up -d --build {{vars.elk_monitoring}}"
+
+[tasks.nodes]
+description = "Start two extra Elasticsearch nodes"
+run = "docker compose {{vars.compose_nodes}} up -d --build {{vars.elk_nodes}}"
+
+[tasks."collect-docker-logs"]
+description = "Start Filebeat to ship host Docker logs into ELK"
+run = "docker compose {{vars.compose_logging}} up -d --build {{vars.elk_log_collection}}"
+
+[tasks.build]
+description = "Build stack images (default: all services)"
+usage = '''
+arg "[service]" var=#true help="service(s) to build (default: all)"
+complete "service" run="./.mise/completion/services.sh"
+'''
+run = "docker compose {{vars.compose_all}} build ${usage_service:-{{vars.elk_all_services}}}"
+
+[tasks.ps]
+description = "Show running stack containers"
+run = "docker compose {{vars.compose_all}} ps"
+
+[tasks.images]
+description = "Show stack images"
+run = "docker compose {{vars.compose_all}} images {{vars.elk_all_services}}"
+
+[tasks.logs]
+description = "Tail stack logs (default: all services)"
+usage = '''
+arg "[service]" var=#true help="service(s) to tail (default: all)"
+complete "service" run="./.mise/completion/services.sh"
+'''
+run = "docker compose {{vars.compose_all}} logs --follow --tail=1000 ${usage_service:-{{vars.elk_all_services}}}"
+
+[tasks.stop]
+description = "Stop stack containers (default: all services)"
+usage = '''
+arg "[service]" var=#true help="service(s) to stop (default: all)"
+complete "service" run="./.mise/completion/services.sh"
+'''
+run = "docker compose {{vars.compose_all}} stop ${usage_service:-{{vars.elk_all_services}}}"
+
+[tasks.restart]
+description = "Restart stack containers (default: all services)"
+usage = '''
+arg "[service]" var=#true help="service(s) to restart (default: all)"
+complete "service" run="./.mise/completion/services.sh"
+'''
+run = "docker compose {{vars.compose_all}} restart ${usage_service:-{{vars.elk_all_services}}}"
+
+[tasks.down]
+description = "Stop and remove stack containers (keeps volume data)"
+run = "docker compose {{vars.compose_all}} down"
+
+[tasks.rm]
+description = "Remove stack containers (default: all services)"
+confirm = "Remove the ELK stack containers?"
+usage = '''
+arg "[service]" var=#true help="service(s) to remove (default: all)"
+complete "service" run="./.mise/completion/services.sh"
+'''
+run = "docker compose {{vars.compose_all}} rm -f ${usage_service:-{{vars.elk_all_services}}}"
+
+[tasks.prune]
+description = "Remove containers AND delete the stack's volume data (irreversible)"
+confirm = "Delete ALL ELK containers and volume data? This cannot be undone."
+run = '''
+docker compose {{vars.compose_all}} stop {{vars.elk_all_services}}
+docker compose {{vars.compose_all}} rm -f {{vars.elk_all_services}}
+docker volume ls --filter label=com.docker.compose.project="${COMPOSE_PROJECT_NAME}" --format '{% raw %}{{ .Name }}{% endraw %}' | xargs -r docker volume rm 2>/dev/null || true
+echo "Removed all volumes for project: ${COMPOSE_PROJECT_NAME}"
+'''
+
+# ── 🪝 hooks ──────────────────────────────────────────────────────────────────────────────────────
+[hooks]
+enter = "mise run setup:check"    # nudge contributors when their setup is stale
+postinstall = "hk install --mise" # install git hooks after every `mise install` (idempotent)
+
+# ── ⚙️ settings ───────────────────────────────────────────────────────────────────────────────────
+[settings]
+lockfile = true                     # write/commit mise.lock for reproducible installs
+minimum_release_age = "7d"          # ignore releases <7d old (supply-chain cooldown)
+disable_backends = ["asdf", "vfox"] # resolve only via verified backends
+pipx.uvx = true                     # install Python tools with uv (CI pip is too old for the cooldown's date filter)
+
+# Use a gh/git token for tool installs to avoid GitHub API rate limits.
+github.gh_cli_tokens = true
+github.use_git_credentials = true

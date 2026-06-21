@@ -45,7 +45,11 @@ services:
       ELASTIC_DISCOVERY_SEEDS: ${ELASTIC_DISCOVERY_SEEDS}
       ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT}
       ES_JAVA_OPTS: "-Xmx${ELASTICSEARCH_HEAP} -Xms${ELASTICSEARCH_HEAP} -Des.enforce.bootstrap.checks=true -Dlog4j2.formatMsgNoLookups=true"
-      bootstrap.memory_lock: "true"
+      # Lock the JVM heap into RAM to avoid swap-induced GC stalls. Disabled by
+      # default because rootless container backends (e.g. rootless podman) cap
+      # RLIMIT_MEMLOCK far below the heap size, which fails the enforced bootstrap
+      # check. Set to "true" on rootful Docker / production where mlockall works.
+      bootstrap.memory_lock: "${ELASTICSEARCH_MEMORY_LOCK:-false}"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
@@ -97,7 +101,7 @@ services:
       - "5044:5044"
       - "9600:9600"
     healthcheck:
-      test: ["CMD", "curl", "-s" ,"-XGET", "http://127.0.0.1:9600"]
+      test: ["CMD", "curl", "-s", "-XGET", "http://127.0.0.1:9600"]
 
   kibana:
     image: ${KIBANA_IMAGE_NAME}:${ELK_VERSION}
@@ -113,6 +117,9 @@ services:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
       ELASTICSEARCH_HOST_PORT: https://${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}
       KIBANA_PORT: ${KIBANA_PORT}
+      KIBANA_ENCRYPTION_KEY: ${KIBANA_ENCRYPTION_KEY}
+      KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY: ${KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY}
+      KIBANA_REPORTING_ENCRYPTION_KEY: ${KIBANA_REPORTING_ENCRYPTION_KEY}
     env_file:
       - ./secrets/.env.kibana.token
     secrets:

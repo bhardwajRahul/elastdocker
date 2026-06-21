@@ -1,3 +1,4 @@
+#!/bin/bash
 # Exit on Error
 set -e
 
@@ -9,14 +10,14 @@ OUTPUT_SERVICE_TOKENS=/secrets/service_tokens
 OUTPUT_KIBANA_TOKEN=/secrets/.env.kibana.token
 
 # Password Generate
-PW=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 16 ;)
+PW=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 16)
 ELASTIC_PASSWORD="${ELASTIC_PASSWORD:-$PW}"
 export ELASTIC_PASSWORD
 
 # Create Keystore
 printf "========== Creating Elasticsearch Keystore ==========\n"
 printf "=====================================================\n"
-elasticsearch-keystore create >> /dev/null
+elasticsearch-keystore create >>/dev/null
 
 # Setting Secrets and Bootstrap Password
 sh /setup/keystore.sh
@@ -26,17 +27,17 @@ echo "Elastic Bootstrap Password is: $ELASTIC_PASSWORD"
 echo "Generating Kibana Service Token..."
 
 # Delete old token if exists
-/usr/share/elasticsearch/bin/elasticsearch-service-tokens delete elastic/kibana default &> /dev/null || true
+/usr/share/elasticsearch/bin/elasticsearch-service-tokens delete elastic/kibana default &>/dev/null || true
 
 # Generate new token
 TOKEN=$(/usr/share/elasticsearch/bin/elasticsearch-service-tokens create elastic/kibana default | cut -d '=' -f2 | tr -d ' ')
 echo "Kibana Service Token is: $TOKEN"
-echo "KIBANA_SERVICE_ACCOUNT_TOKEN=$TOKEN" > $OUTPUT_KIBANA_TOKEN
+echo "KIBANA_SERVICE_ACCOUNT_TOKEN=$TOKEN" >$OUTPUT_KIBANA_TOKEN
 
 # Replace current Keystore
 if [ -f "$OUTPUT_KEYSTORE" ]; then
-    echo "Remove old elasticsearch.keystore"
-    rm $OUTPUT_KEYSTORE
+	echo "Remove old elasticsearch.keystore"
+	rm $OUTPUT_KEYSTORE
 fi
 
 echo "Saving new elasticsearch.keystore"
@@ -46,8 +47,8 @@ chmod 0644 $OUTPUT_KEYSTORE
 
 # Replace current Service Tokens File
 if [ -f "$OUTPUT_SERVICE_TOKENS" ]; then
-    echo "Remove old service_tokens file"
-    rm $OUTPUT_SERVICE_TOKENS
+	echo "Remove old service_tokens file"
+	rm $OUTPUT_SERVICE_TOKENS
 fi
 
 echo "Saving new service_tokens file"
@@ -59,6 +60,6 @@ printf "=====================================================\n"
 printf "Remember to restart the stack, or reload secure settings if changed settings are hot-reloadable.\n"
 printf "About Reloading Settings: https://www.elastic.co/guide/en/elasticsearch/reference/current/secure-settings.html#reloadable-secure-settings\n"
 printf "=====================================================\n"
-printf "Your 'elastic' user password is: $ELASTIC_PASSWORD\n"
-printf "Your Kibana Service Token is: $TOKEN\n"
+printf "Your 'elastic' user password is: %s\n" "$ELASTIC_PASSWORD"
+printf "Your Kibana Service Token is: %s\n" "$TOKEN"
 printf "=====================================================\n"
