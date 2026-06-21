@@ -457,7 +457,7 @@ On commit, [hk](https://hk.jdx.dev) runs the same `check` on your staged files, 
 ## License
 
 [MIT License](https://raw.githubusercontent.com/sherifabdlnaby/elastdocker/master/LICENSE)
-Copyright (c) 2022-2026 Sheriff Abdel-Naby
+Copyright (c) 2022-2026 Sherif Abdel-Naby
 
 ## Contribution
 

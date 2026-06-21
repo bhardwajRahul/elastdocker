@@ -10,6 +10,7 @@
 
 [default.extend-words]
 # Treat the left token as correct (don't "fix" it to the right).
+sherif = "sherif" # the maintainer's name, not a typo of "sheriff"
 # referer = "referer"
 
 [default.extend-identifiers]
