@@ -45,7 +45,11 @@ services:
       ELASTIC_DISCOVERY_SEEDS: ${ELASTIC_DISCOVERY_SEEDS}
       ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT}
       ES_JAVA_OPTS: "-Xmx${ELASTICSEARCH_HEAP} -Xms${ELASTICSEARCH_HEAP} -Des.enforce.bootstrap.checks=true -Dlog4j2.formatMsgNoLookups=true"
-      bootstrap.memory_lock: "true"
+      # Lock the JVM heap into RAM to avoid swap-induced GC stalls. Disabled by
+      # default because rootless container backends (e.g. rootless podman) cap
+      # RLIMIT_MEMLOCK far below the heap size, which fails the enforced bootstrap
+      # check. Set to "true" on rootful Docker / production where mlockall works.
+      bootstrap.memory_lock: "${ELASTICSEARCH_MEMORY_LOCK:-false}"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
