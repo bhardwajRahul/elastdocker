@@ -1,7 +1,7 @@
 // Git hooks for hk. Tools come from mise (mise.toml); `mise run check` drives this.
 // Pinned to the installed hk; `hk init` regenerates these URLs.
-amends "package://github.com/jdx/hk/releases/download/v1.47.0/hk@1.47.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v1.47.0/hk@1.47.0#/Builtins.pkl"
+amends "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Builtins.pkl"
 
 // Repo-wide ignores — committed paths only (.gitignore is already honored). Per-step `exclude` stacks.
 local commonIgnores = List(
@@ -32,16 +32,31 @@ local linters: Mapping<String, Step> = new Mapping<String, Step> {
   // docker
   ["hadolint"] = Builtins.hadolint
 
-  // yaml
+  // config formats
   ["yamllint"] = Builtins.yamllint
+  ["taplo"] = Builtins.taplo
 
   // GitHub Actions
   ["actionlint"] = Builtins.actionlint
   ["zizmor"] = Builtins.zizmor
-  ["pinact"] = Builtins.pinact
+  // pinact resolves Action tags to SHAs via the GitHub API, so it needs a token or it hits the
+  // anonymous rate limit. Prefer $GITHUB_TOKEN (CI injects it); locally fall back to the dev's `gh`
+  // login. gh missing/not-logged-in -> empty token, so pinact runs unauthenticated (rate-limited)
+  // instead of failing the commit. hk `env` values are static, so prepend the token to the builtin's
+  // own command (keeps it in sync with the builtin). Needs `gh` on PATH (system or [tools]).
+  ["pinact"] = (Builtins.pinact) {
+    check_diff =
+      "PINACT_GITHUB_TOKEN=\"${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}\" "
+        + Builtins.pinact.check_diff
+    fix =
+      "PINACT_GITHUB_TOKEN=\"${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}\" "
+        + Builtins.pinact.fix
+  }
 
-  // markdown
+  // markdown + links
   ["rumdl"] = Builtins.rumdl
+  // dead links — offline (local/relative links only); see lychee.toml
+  ["lychee"] = Builtins.lychee
 
   // spelling & secrets
   ["typos"] = Builtins.typos
