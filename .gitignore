@@ -2,3 +2,5 @@
 .DS_Store
 /secrets
 tools/elastalert/rules/*
+mise.local.toml
+hk.local.pkl
