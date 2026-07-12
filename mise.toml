@@ -75,7 +75,7 @@ hk check $ff ${usage_fix:+--fix} ${usage_all:+--all} ${usage_pr:+--pr} \
 [tasks.test]
 description = "Run tests (stack smoke test runs in CI; no local unit tests yet)"
 depends = ["lint"]
-run = 'echo "No local unit tests. The ELK stack smoke test runs in CI (.github/workflows/build.yml)."'
+run = 'echo "No local unit tests. The ELK stack smoke test runs in CI (.github/workflows/smoke-test.yml)."'
 
 [tasks.setup] # one-time, idempotent bootstrap; re-run when `enter` warns it's stale
 description = "Install pinned tools and git hooks"
