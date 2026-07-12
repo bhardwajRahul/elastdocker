@@ -27,9 +27,9 @@ Commits run [hk](https://hk.jdx.dev) (config in `hk.pkl`), the same `check` CI r
 
 ## Linters
 
-Defined once in `hk.pkl` and shared by the `check` and `pre-commit` hooks: `shellcheck` + `shfmt` (shell), `hadolint` (Dockerfiles), `yamllint` (YAML), `actionlint` + `zizmor` + `pinact` (GitHub Actions lint / security / SHA-pinning), `rumdl` (Markdown), `typos` (spelling), `betterleaks` (secrets), plus repo-hygiene checks (newlines, trailing whitespace, merge-conflict markers, large files, private keys, …) and `mise` self-lint.
+Defined once in `hk.pkl` and shared by the `check` and `pre-commit` hooks: `shellcheck` + `shfmt` (shell), `hadolint` (Dockerfiles), `yamllint` (YAML), `taplo` (TOML), `actionlint` + `zizmor` + `pinact` (GitHub Actions lint / security / SHA-pinning), `rumdl` (Markdown), `lychee` (local/relative links, offline), `typos` (spelling), `betterleaks` (secrets), plus repo-hygiene checks (newlines, trailing whitespace, merge-conflict markers, large files, private keys, …) and `mise` self-lint.
 
-Tunable linters keep a root config file: `.yamllint`, `rumdl.toml`, `typos.toml`, `.betterleaks.toml`. The betterleaks step is routed to its config via `BETTERLEAKS_CONFIG` in `hk.pkl`. `.env` (placeholder defaults) is allowlisted there, not a real secret store.
+Tunable linters keep a root config file: `.yamllint`, `rumdl.toml`, `typos.toml`, `.betterleaks.toml`, `lychee.toml`. The betterleaks step is routed to its config via `BETTERLEAKS_CONFIG` in `hk.pkl`. `.env` (placeholder defaults) is allowlisted there, not a real secret store.
 
 ## CI
 
