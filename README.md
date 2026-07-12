@@ -11,8 +11,8 @@
    <a>
       <img src="https://img.shields.io/github/v/tag/sherifabdlnaby/elastdocker?label=release&amp;sort=semver">
    </a>
-   <a href="https://github.com/sherifabdlnaby/elastdocker/actions/workflows/build.yml">
-      <img src="https://github.com/sherifabdlnaby/elastdocker/actions/workflows/build.yml/badge.svg">
+   <a href="https://github.com/sherifabdlnaby/elastdocker/actions/workflows/smoke-test.yml">
+      <img src="https://github.com/sherifabdlnaby/elastdocker/actions/workflows/smoke-test.yml/badge.svg">
    </a>
    <a>
       <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="contributions welcome">

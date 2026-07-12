@@ -34,7 +34,7 @@ Tunable linters keep a root config file: `.yamllint`, `rumdl.toml`, `typos.toml`
 ## CI
 
 - `.github/workflows/lint.yml` runs `mise run check` (`--pr` on PRs, `--all` on schedule/dispatch) and leaves one sticky comment pointing at `mise run check --fix`. Keep this green by running `mise run check --all` locally.
-- `.github/workflows/build.yml` spins up the full stack (`make setup && make up`) and smoke-tests Elasticsearch + Kibana. Changes to compose files or service configs are validated here.
+- `.github/workflows/smoke-test.yml` spins up the full stack (`mise run stack:setup && mise run up`), smoke-tests Elasticsearch + Kibana, and Trivy-scans the built image to the Security tab. Changes to compose files or service configs are validated here.
 - `.github/workflows/auto-release.yml` drafts releases. GitHub Actions are pinned to commit SHAs (enforced by `pinact`); let `mise run check --fix` re-pin after bumping a version comment.
 
 ## Extending the setup
